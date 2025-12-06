@@ -20,7 +20,8 @@
     "postinstall": "npx playwright install chromium",
     "start": "ts-node src/crawl.ts",
     "dev": "npx tsx src/dev.ts",
-    "build": "tsup"
+    "build": "tsup",
+    "convert-source-target": "ts-node src/scripts/convert-source-target.ts"
   },
 
   "dependencies": {

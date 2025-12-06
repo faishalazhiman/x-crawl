@@ -27,7 +27,7 @@ function showWelcomeMessage() {
   console.log(chalk.bold.green(`x-crawl [v${version}]\n`));
   console.log(
     chalk.blue("Research by ") +
-      chalk.bold.blue("Helmi Satria") +
+      chalk.bold.blue("Helmi Satria & Modified by Ishal") +
       chalk.blue("\nUse it for Educational Purposes only!\n"),
   );
   console.log(
