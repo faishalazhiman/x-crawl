@@ -19,13 +19,15 @@ var require_package = __commonJS({
       },
       files: ["dist/"],
       bin: {
-        "x-crawl": "./dist/bin.js"
+        "x-crawl": "./dist/bin.js",
+        "x-crawl-convert": "./dist/convert.js"
       },
       scripts: {
         postinstall: "npx playwright install chromium",
         start: "ts-node src/crawl.ts",
         dev: "npx tsx src/dev.ts",
-        build: "tsup"
+        build: "tsup",
+        "convert-source-target": "ts-node src/scripts/convert-source-target.ts"
       },
       dependencies: {
         "@playwright/test": "^1.41.1",
@@ -487,7 +489,7 @@ function showWelcomeMessage() {
   console.log(_chalk2.default.bold.green(`x-crawl [v${version}]
 `));
   console.log(
-    _chalk2.default.blue("Research by ") + _chalk2.default.bold.blue("Helmi Satria") + _chalk2.default.blue("\nUse it for Educational Purposes only!\n")
+    _chalk2.default.blue("Research by ") + _chalk2.default.bold.blue("Helmi Satria & Modified by Ishal") + _chalk2.default.blue("\nUse it for Educational Purposes only!\n")
   );
   console.log(
     _chalk2.default.yellow(

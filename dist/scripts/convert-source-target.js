@@ -11,8 +11,13 @@ function readCSV(filePath) {
     Papa.parse(fileContent, {
       header: true,
       complete: (result) => {
-        const data = result.data.map((d) => _lodash.pick.call(void 0, d, ["username", "in_reply_to_screen_name"])).filter(
-          (d) => d.username || d.in_reply_to_screen_name
+        const data = result.data.map(
+          (d) => (
+            // ambil hanya 2 kolom yang kita butuhkan
+            _lodash.pick.call(void 0, d, ["username", "in_reply_to_screen_name"])
+          )
+        ).filter(
+          (d) => typeof d.username === "string" && d.username.trim() !== "" && typeof d.in_reply_to_screen_name === "string" && d.in_reply_to_screen_name.trim() !== ""
         );
         resolve(data);
       },
@@ -35,7 +40,7 @@ async function transformCSV(inputFilePath, outputFilePath) {
     const inputData = await readCSV(inputFilePath);
     const outputData = inputData.map((row) => ({
       source: row.username,
-      target: row.in_reply_to_screen_name || ""
+      target: row.in_reply_to_screen_name
     }));
     writeCSV(outputFilePath, outputData);
   } catch (error) {
