@@ -20,7 +20,7 @@ var require_package = __commonJS({
       files: ["dist/"],
       bin: {
         "x-crawl": "./dist/bin.js",
-        "x-crawl-convert": "./dist/convert.js"
+        "x-crawl-convert": "./dist/scripts/convert-source-target.js"
       },
       scripts: {
         postinstall: "npx playwright install chromium",
