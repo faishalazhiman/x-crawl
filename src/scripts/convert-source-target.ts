@@ -7,7 +7,8 @@ import { pick } from "lodash";
 
 interface InputRow {
   username: string;
-  in_reply_to_screen_name: string;
+  in_reply_to_screen_name?: string;
+  full_text?: string;
 }
 
 interface OutputRow {
@@ -16,13 +17,10 @@ interface OutputRow {
 }
 
 /**
- * Baca CSV hasil crawling dan ambil hanya kolom:
+ * Baca CSV hasil crawling, ambil kolom:
  * - username
  * - in_reply_to_screen_name
- *
- * Sekaligus filter:
- * - HANYA baris yang punya username DAN in_reply_to_screen_name
- *   (supaya edge-list buat SNA/Gephi bersih)
+ * - full_text
  */
 function readCSV(filePath: string): Promise<InputRow[]> {
   return new Promise((resolve, reject) => {
@@ -33,18 +31,13 @@ function readCSV(filePath: string): Promise<InputRow[]> {
       complete: (result) => {
         const data = (
           result.data.map((d) =>
-            // ambil hanya 2 kolom yang kita butuhkan
-            pick(d, ["username", "in_reply_to_screen_name"])
+            pick(d, ["username", "in_reply_to_screen_name", "full_text"])
           ) as InputRow[]
-        )
-          // FILTER: wajib ada username dan in_reply_to_screen_name
-          .filter(
-            (d) =>
-              typeof d.username === "string" &&
-              d.username.trim() !== "" &&
-              typeof d.in_reply_to_screen_name === "string" &&
-              d.in_reply_to_screen_name.trim() !== ""
-          );
+        ).filter(
+          (d) =>
+            typeof d.username === "string" &&
+            d.username.trim() !== ""
+        ); // minimal harus punya username / sumber
 
         resolve(data);
       },
@@ -54,10 +47,7 @@ function readCSV(filePath: string): Promise<InputRow[]> {
 }
 
 /**
- * Tulis CSV baru dengan format:
- * source,target
- * userA,userB
- * userC,userD
+ * Tulis CSV baru: edge list untuk Gephi
  */
 function writeCSV(filePath: string, data: OutputRow[]): void {
   const csv = Papa.unparse(data, {
@@ -72,17 +62,64 @@ function writeCSV(filePath: string, data: OutputRow[]): void {
 }
 
 /**
- * Transform dari CSV hasil crawling → edge list untuk Gephi/SNA
+ * Ambil semua mention @username dari teks
+ */
+function extractMentions(text: string | undefined): string[] {
+  if (!text) return [];
+
+  const mentionRegex = /@([A-Za-z0-9_]{1,15})/g; // format handle Twitter
+  const mentions = new Set<string>();
+  let match: RegExpExecArray | null;
+
+  while ((match = mentionRegex.exec(text)) !== null) {
+    const handle = match[1].trim();
+    if (handle) {
+      mentions.add(handle);
+    }
+  }
+
+  return Array.from(mentions);
+}
+
+/**
+ * Transform:
+ *   - source  = username
+ *   - target  = reply_to (kalau ada) + semua @mention di full_text
  */
 async function transformCSV(inputFilePath: string, outputFilePath: string) {
   try {
     const inputData = await readCSV(inputFilePath);
+    const outputData: OutputRow[] = [];
 
-    // Di titik ini, inputData hanya berisi baris yang lengkap (source & target)
-    const outputData: OutputRow[] = inputData.map((row) => ({
-      source: row.username,
-      target: row.in_reply_to_screen_name,
-    }));
+    for (const row of inputData) {
+      const source = row.username.trim();
+      const targets = new Set<string>();
+
+      // 1) edge reply jika ada
+      if (
+        typeof row.in_reply_to_screen_name === "string" &&
+        row.in_reply_to_screen_name.trim() !== ""
+      ) {
+        targets.add(row.in_reply_to_screen_name.trim());
+      }
+
+      // 2) edge mention dari full_text
+      const mentions = extractMentions(row.full_text);
+      for (const m of mentions) {
+        // optional: jangan bikin self-loop
+        if (m !== source) {
+          targets.add(m);
+        }
+      }
+
+      // kalau nggak ada target sama sekali, lewati baris ini
+      if (targets.size === 0) continue;
+
+      // masukkan semua edge (source → setiap target unik)
+      for (const target of targets) {
+        outputData.push({ source, target });
+      }
+    }
 
     writeCSV(outputFilePath, outputData);
   } catch (error) {
