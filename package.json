@@ -14,7 +14,7 @@
 
   "bin": {
     "x-crawl": "./dist/bin.js",
-    "x-crawl-convert": "./dist/convert.js"
+    "x-crawl-convert": "./dist/scripts/convert-source-target.js"
   },
 
   "scripts": {
